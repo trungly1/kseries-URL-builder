@@ -264,6 +264,9 @@ export default function KSeriesOAuthBuilder() {
           <div style={styles.disclaimerIcon}>ℹ</div>
           <div>
             <strong>This tool builds URLs and cURL commands only.</strong> It does not create, modify, or provision API clients. Your API client must already be provisioned with the correct scopes and redirect URI before using this tool. To request changes to your API client configuration, contact your Lightspeed technical partner specialist.
+            <div style={{ marginTop: "8px", color: "#818cf8" }}>
+              🔒 <strong>Privacy:</strong> All encoding and decoding happens entirely in your browser. No credentials, tokens, or data are sent to any server. <a href="https://github.com/trung-ly-ls/kseries-url-oauth-builder" target="_blank" rel="noopener noreferrer" style={{ color: "#a78bfa", textDecoration: "underline" }}>View source on GitHub</a> to verify.
+            </div>
           </div>
         </div>
 
@@ -532,7 +535,13 @@ export default function KSeriesOAuthBuilder() {
         {/* Footer */}
         <div style={styles.footer}>
           <span>Lightspeed K-Series — OAuth 2.0 Builder</span>
-          <span style={styles.footerRight}>Unofficial Tool · Refer to <a href="https://api-portal.lsk.lightspeed.app/quick-start/authentication/authorization-overview" target="_blank" rel="noopener noreferrer" style={styles.footerLink}>official docs</a></span>
+          <span style={styles.footerRight}>
+            <a href="https://github.com/trungly1/kseries-URL-builder" target="_blank" rel="noopener noreferrer" style={styles.footerLink}>GitHub</a>
+            {" · "}
+            <a href="https://api-portal.lsk.lightspeed.app/quick-start/authentication/authorization-overview" target="_blank" rel="noopener noreferrer" style={styles.footerLink}>Official Docs</a>
+            {" · "}
+            Unofficial Tool
+          </span>
         </div>
       </div>
     </div>
@@ -563,7 +572,7 @@ const styles = {
     gap: "12px",
   },
   badge: {
-    fontSize: "11px",
+    fontSize: "12px",
     fontWeight: 700,
     letterSpacing: "0.12em",
     color: "#a78bfa",
@@ -583,7 +592,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    fontSize: "13px",
+    fontSize: "14px",
     fontWeight: 500,
     color: "#71717a",
     background: "transparent",
@@ -605,7 +614,7 @@ const styles = {
     borderRadius: "50%",
   },
   title: {
-    fontSize: "28px",
+    fontSize: "32px",
     fontWeight: 700,
     color: "#fafafa",
     margin: 0,
@@ -613,7 +622,7 @@ const styles = {
     lineHeight: 1.2,
   },
   v2Badge: {
-    fontSize: "11px",
+    fontSize: "12px",
     fontWeight: 700,
     letterSpacing: "0.06em",
     color: "#fbbf24",
@@ -624,7 +633,7 @@ const styles = {
     whiteSpace: "nowrap",
   },
   subtitle: {
-    fontSize: "14px",
+    fontSize: "15px",
     color: "#71717a",
     margin: "6px 0 0",
   },
@@ -632,7 +641,7 @@ const styles = {
     display: "flex",
     gap: "12px",
     alignItems: "flex-start",
-    fontSize: "12px",
+    fontSize: "13px",
     lineHeight: 1.6,
     color: "#a1a1aa",
     background: "rgba(99,102,241,0.06)",
@@ -648,7 +657,7 @@ const styles = {
     color: "#818cf8",
   },
   reqDot: {
-    fontSize: "9px",
+    fontSize: "10px",
     fontWeight: 700,
     letterSpacing: "0.05em",
     textTransform: "uppercase",
@@ -670,7 +679,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: "6px",
-    fontSize: "12px",
+    fontSize: "13px",
     fontWeight: 500,
     color: "#71717a",
     background: "transparent",
@@ -688,7 +697,7 @@ const styles = {
     boxShadow: "0 0 0 1px rgba(167,139,250,0.25)",
   },
   tabIcon: {
-    fontSize: "14px",
+    fontSize: "15px",
   },
   section: {
     marginBottom: "24px",
@@ -698,7 +707,7 @@ const styles = {
     padding: "20px",
   },
   sectionLabel: {
-    fontSize: "11px",
+    fontSize: "12px",
     fontWeight: 700,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
@@ -716,7 +725,7 @@ const styles = {
     gap: "6px",
   },
   label: {
-    fontSize: "12px",
+    fontSize: "13px",
     fontWeight: 600,
     color: "#a1a1aa",
   },
@@ -726,7 +735,7 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: "8px",
     padding: "10px 12px",
-    fontSize: "13px",
+    fontSize: "14px",
     color: "#e4e4e7",
     fontFamily: "'IBM Plex Mono', 'SF Mono', monospace",
     outline: "none",
@@ -739,7 +748,7 @@ const styles = {
     lineHeight: 1.5,
   },
   hint: {
-    fontSize: "12px",
+    fontSize: "13px",
     color: "#71717a",
     marginTop: "8px",
     lineHeight: 1.5,
@@ -788,17 +797,17 @@ const styles = {
     color: "#fff",
   },
   scopeName: {
-    fontSize: "13px",
+    fontSize: "14px",
     fontWeight: 600,
   },
   scopeDesc: {
-    fontSize: "11px",
+    fontSize: "12px",
     color: "#71717a",
     marginTop: "1px",
   },
   scopeCode: {
     marginLeft: "auto",
-    fontSize: "11px",
+    fontSize: "12px",
     color: "#71717a",
     fontFamily: "'IBM Plex Mono', monospace",
     background: "rgba(255,255,255,0.04)",
@@ -821,7 +830,7 @@ const styles = {
     borderBottom: "1px solid rgba(255,255,255,0.04)",
   },
   outputLabel: {
-    fontSize: "11px",
+    fontSize: "12px",
     fontWeight: 600,
     color: "#71717a",
     letterSpacing: "0.03em",
@@ -829,7 +838,7 @@ const styles = {
   outputPre: {
     margin: 0,
     padding: "12px",
-    fontSize: "13px",
+    fontSize: "14px",
     fontFamily: "'IBM Plex Mono', 'SF Mono', monospace",
     color: "#c4b5fd",
     whiteSpace: "pre-wrap",
@@ -838,7 +847,7 @@ const styles = {
     overflowX: "auto",
   },
   copyBtn: {
-    fontSize: "11px",
+    fontSize: "12px",
     fontWeight: 600,
     color: "#a78bfa",
     background: "rgba(167,139,250,0.1)",
@@ -850,7 +859,7 @@ const styles = {
     fontFamily: "inherit",
   },
   copyBtnSmall: {
-    fontSize: "10px",
+    fontSize: "11px",
     padding: "3px 8px",
   },
   copyBtnCopied: {
@@ -863,7 +872,7 @@ const styles = {
     alignItems: "center",
     gap: "6px",
     marginTop: "12px",
-    fontSize: "13px",
+    fontSize: "14px",
     fontWeight: 600,
     color: "#fafafa",
     background: "#7c3aed",
@@ -875,7 +884,7 @@ const styles = {
     transition: "all 0.15s",
   },
   warningBox: {
-    fontSize: "13px",
+    fontSize: "14px",
     color: "#fbbf24",
     background: "rgba(251,191,36,0.06)",
     border: "1px solid rgba(251,191,36,0.15)",
@@ -890,7 +899,7 @@ const styles = {
     marginBottom: "4px",
   },
   jwtSectionTitle: {
-    fontSize: "12px",
+    fontSize: "13px",
     fontWeight: 700,
     letterSpacing: "0.06em",
     textTransform: "uppercase",
@@ -902,11 +911,11 @@ const styles = {
     padding: "8px 0",
     borderBottom: "1px solid rgba(255,255,255,0.04)",
     alignItems: "flex-start",
-    fontSize: "13px",
+    fontSize: "14px",
   },
   claimKey: {
     fontFamily: "'IBM Plex Mono', monospace",
-    fontSize: "12px",
+    fontSize: "13px",
     fontWeight: 600,
     color: "#a78bfa",
     minWidth: "120px",
@@ -916,7 +925,7 @@ const styles = {
     gap: "2px",
   },
   claimKeyHint: {
-    fontSize: "10px",
+    fontSize: "11px",
     fontWeight: 400,
     color: "#71717a",
     fontFamily: "'IBM Plex Sans', sans-serif",
@@ -925,13 +934,13 @@ const styles = {
     flex: 1,
     color: "#e4e4e7",
     fontFamily: "'IBM Plex Mono', monospace",
-    fontSize: "12px",
+    fontSize: "13px",
     lineHeight: 1.5,
     minWidth: 0,
   },
   claimJson: {
     margin: 0,
-    fontSize: "11px",
+    fontSize: "12px",
     fontFamily: "'IBM Plex Mono', monospace",
     color: "#a1a1aa",
     whiteSpace: "pre-wrap",
@@ -939,7 +948,7 @@ const styles = {
   },
   claimTimeBadge: {
     display: "inline-block",
-    fontSize: "10px",
+    fontSize: "11px",
     fontWeight: 600,
     fontFamily: "'IBM Plex Sans', sans-serif",
     borderRadius: "4px",
@@ -954,7 +963,7 @@ const styles = {
     marginTop: "32px",
     paddingTop: "16px",
     borderTop: "1px solid rgba(255,255,255,0.06)",
-    fontSize: "11px",
+    fontSize: "12px",
     color: "#52525b",
     flexWrap: "wrap",
     gap: "8px",

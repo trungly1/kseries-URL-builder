@@ -20,6 +20,46 @@ const AVAILABLE_SCOPES = [
   { value: "offline_access", label: "Offline Access", desc: "Extended refresh token lifetime" },
 ];
 
+function base64UrlDecode(str) {
+  try {
+    const padded = str.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = padded.length % 4 === 0 ? "" : "=".repeat(4 - (padded.length % 4));
+    return JSON.parse(atob(padded + pad));
+  } catch {
+    return null;
+  }
+}
+
+function decodeJwt(token) {
+  if (!token || !token.trim()) return null;
+  const parts = token.trim().split(".");
+  if (parts.length !== 3) return null;
+  const header = base64UrlDecode(parts[0]);
+  const payload = base64UrlDecode(parts[1]);
+  if (!header || !payload) return null;
+  return { header, payload, signature: parts[2] };
+}
+
+function formatTimestamp(ts) {
+  if (!ts || typeof ts !== "number") return null;
+  const d = new Date(ts * 1000);
+  const now = Date.now();
+  const diff = ts * 1000 - now;
+  const expired = diff < 0;
+  const absDiff = Math.abs(diff);
+  let relative;
+  if (absDiff < 60000) relative = "just now";
+  else if (absDiff < 3600000) relative = `${Math.floor(absDiff / 60000)}m`;
+  else if (absDiff < 86400000) relative = `${Math.floor(absDiff / 3600000)}h ${Math.floor((absDiff % 3600000) / 60000)}m`;
+  else relative = `${Math.floor(absDiff / 86400000)}d`;
+  return {
+    iso: d.toISOString(),
+    local: d.toLocaleString(),
+    expired,
+    relative: expired ? `${relative} ago` : `in ${relative}`,
+  };
+}
+
 function CopyButton({ text, small }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = useCallback(() => {
@@ -52,6 +92,52 @@ function OutputBlock({ label, value, mono }) {
   );
 }
 
+function JwtClaimRow({ k, v }) {
+  const timeFields = { exp: "Expires", iat: "Issued At", nbf: "Not Before", auth_time: "Auth Time" };
+  const isTime = timeFields[k] && typeof v === "number";
+  const ts = isTime ? formatTimestamp(v) : null;
+
+  return (
+    <div style={styles.claimRow}>
+      <div style={styles.claimKey}>
+        {k}
+        {isTime && <span style={styles.claimKeyHint}>{timeFields[k]}</span>}
+      </div>
+      <div style={styles.claimValue}>
+        {isTime && ts ? (
+          <div>
+            <span>{ts.local}</span>
+            <span style={{
+              ...styles.claimTimeBadge,
+              color: ts.expired ? "#f87171" : "#4ade80",
+              background: ts.expired ? "rgba(248,113,113,0.1)" : "rgba(74,222,128,0.1)",
+              borderColor: ts.expired ? "rgba(248,113,113,0.2)" : "rgba(74,222,128,0.2)",
+            }}>
+              {ts.relative}
+            </span>
+          </div>
+        ) : typeof v === "object" ? (
+          <pre style={styles.claimJson}>{JSON.stringify(v, null, 2)}</pre>
+        ) : (
+          <span style={{ wordBreak: "break-all" }}>{String(v)}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function JwtSection({ title, data, color }) {
+  if (!data) return null;
+  return (
+    <div style={{ ...styles.jwtSection, borderColor: color }}>
+      <div style={{ ...styles.jwtSectionTitle, color }}>{title}</div>
+      {Object.entries(data).map(([k, v]) => (
+        <JwtClaimRow key={k} k={k} v={v} />
+      ))}
+    </div>
+  );
+}
+
 export default function KSeriesOAuthBuilder() {
   const [env, setEnv] = useState("production");
   const [clientId, setClientId] = useState("");
@@ -64,8 +150,11 @@ export default function KSeriesOAuthBuilder() {
   const [redirectResponse, setRedirectResponse] = useState("");
   const [manualCode, setManualCode] = useState("");
 
-  // Refresh token state
+  // Refresh state
   const [refreshToken, setRefreshToken] = useState("");
+
+  // JWT decoder state
+  const [jwtInput, setJwtInput] = useState("");
 
   const toggleScope = useCallback((scope) => {
     setScopes((prev) =>
@@ -125,6 +214,15 @@ export default function KSeriesOAuthBuilder() {
   --data-urlencode 'refresh_token=${rt}'`;
   }, [base64Credentials, env, refreshToken]);
 
+  const decodedJwt = useMemo(() => decodeJwt(jwtInput), [jwtInput]);
+
+  const TABS = [
+    { key: "auth", label: "① Authorization", icon: "🔑" },
+    { key: "token", label: "② Token Exchange", icon: "🔄" },
+    { key: "refresh", label: "③ Refresh", icon: "♻️" },
+    { key: "jwt", label: "④ JWT Decoder", icon: "🔍" },
+  ];
+
   return (
     <div style={styles.root}>
       <div style={styles.container}>
@@ -171,11 +269,7 @@ export default function KSeriesOAuthBuilder() {
 
         {/* Tabs */}
         <div style={styles.tabs}>
-          {[
-            { key: "auth", label: "① Authorization", icon: "🔑" },
-            { key: "token", label: "② Token Exchange", icon: "🔄" },
-            { key: "refresh", label: "③ Refresh", icon: "♻️" },
-          ].map((tab) => (
+          {TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
@@ -190,40 +284,42 @@ export default function KSeriesOAuthBuilder() {
           ))}
         </div>
 
-        {/* Credentials — always visible */}
-        <div style={styles.section}>
-          <div style={styles.sectionLabel}>API Credentials</div>
-          <div style={styles.fieldGrid}>
-            <div style={styles.field}>
-              <label style={styles.label}>Client ID <span style={styles.reqDot}>required</span></label>
-              <input
-                style={styles.input}
-                placeholder="devp-v2-prod-..."
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                spellCheck={false}
-              />
+        {/* Credentials — visible on auth/token/refresh tabs */}
+        {activeTab !== "jwt" && (
+          <div style={styles.section}>
+            <div style={styles.sectionLabel}>API Credentials</div>
+            <div style={styles.fieldGrid}>
+              <div style={styles.field}>
+                <label style={styles.label}>Client ID <span style={styles.reqDot}>required</span></label>
+                <input
+                  style={styles.input}
+                  placeholder="devp-v2-prod-..."
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  spellCheck={false}
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Client Secret <span style={styles.reqDot}>required</span></label>
+                <input
+                  style={styles.input}
+                  type="password"
+                  placeholder="sec..."
+                  value={clientSecret}
+                  onChange={(e) => setClientSecret(e.target.value)}
+                  spellCheck={false}
+                />
+              </div>
             </div>
-            <div style={styles.field}>
-              <label style={styles.label}>Client Secret <span style={styles.reqDot}>required</span></label>
-              <input
-                style={styles.input}
-                type="password"
-                placeholder="sec..."
-                value={clientSecret}
-                onChange={(e) => setClientSecret(e.target.value)}
-                spellCheck={false}
+            {base64Credentials && !base64Credentials.startsWith("⚠") && (
+              <OutputBlock
+                label="Authorization: Basic (Base64 Encoded)"
+                value={`Basic ${base64Credentials}`}
+                mono
               />
-            </div>
+            )}
           </div>
-          {base64Credentials && !base64Credentials.startsWith("⚠") && (
-            <OutputBlock
-              label="Authorization: Basic (Base64 Encoded)"
-              value={`Basic ${base64Credentials}`}
-              mono
-            />
-          )}
-        </div>
+        )}
 
         {/* Tab: Authorization */}
         {activeTab === "auth" && (
@@ -351,11 +447,12 @@ export default function KSeriesOAuthBuilder() {
         {activeTab === "refresh" && (
           <>
             <div style={styles.section}>
+              <div style={styles.sectionLabel}>Refresh Token</div>
               <p style={styles.hint}>
                 Each refresh returns a <strong>new</strong> refresh token. Always store and use the latest one.
                 Never hardcode expiry — read <code>expires_in</code> and <code>refresh_expires_in</code> dynamically.
               </p>
-              <div style={{ marginTop: "14px" }}>
+              <div style={{ marginTop: "12px" }}>
                 <label style={styles.label}>Refresh Token</label>
                 <textarea
                   style={{ ...styles.input, ...styles.textarea }}
@@ -365,14 +462,70 @@ export default function KSeriesOAuthBuilder() {
                   spellCheck={false}
                 />
               </div>
-              {refreshCurl ? (
-                <OutputBlock label="Refresh Token cURL" value={refreshCurl} mono />
-              ) : (
-                <div style={styles.warningBox}>
-                  Enter your Client ID and Client Secret above to generate the refresh cURL.
+            </div>
+
+            {refreshCurl ? (
+              <div style={styles.section}>
+                <div style={styles.sectionLabel}>Refresh Token cURL</div>
+                <OutputBlock label="cURL Command" value={refreshCurl} mono />
+              </div>
+            ) : (
+              <div style={styles.warningBox}>
+                Enter your Client ID and Client Secret above to generate the refresh cURL.
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Tab: JWT Decoder */}
+        {activeTab === "jwt" && (
+          <>
+            <div style={styles.section}>
+              <div style={styles.sectionLabel}>JWT Token Decoder</div>
+              <p style={styles.hint}>
+                Paste an access token or refresh token to decode its header and payload. Decoding happens entirely in your browser — nothing is sent anywhere.
+              </p>
+              <div style={{ marginTop: "12px" }}>
+                <label style={styles.label}>JWT Token</label>
+                <textarea
+                  style={{ ...styles.input, ...styles.textarea, minHeight: "100px" }}
+                  placeholder="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  value={jwtInput}
+                  onChange={(e) => setJwtInput(e.target.value)}
+                  spellCheck={false}
+                />
+              </div>
+              {jwtInput.trim() && !decodedJwt && (
+                <div style={{ ...styles.warningBox, marginTop: "12px" }}>
+                  Not a valid JWT. A JWT has three base64url-encoded parts separated by dots: <code>header.payload.signature</code>
                 </div>
               )}
             </div>
+
+            {decodedJwt && (
+              <>
+                <div style={styles.section}>
+                  <JwtSection title="Header" data={decodedJwt.header} color="#60a5fa" />
+                </div>
+                <div style={styles.section}>
+                  <JwtSection title="Payload" data={decodedJwt.payload} color="#a78bfa" />
+                  <OutputBlock
+                    label="Raw Payload JSON"
+                    value={JSON.stringify(decodedJwt.payload, null, 2)}
+                    mono
+                  />
+                </div>
+                <div style={styles.section}>
+                  <div style={styles.sectionLabel}>Signature</div>
+                  <div style={styles.hint}>
+                    The signature cannot be verified client-side without the public key. Use this decoder for inspection only — not for validation.
+                  </div>
+                  <div style={{ marginTop: "8px" }}>
+                    <OutputBlock label="Signature (base64url)" value={decodedJwt.signature} mono />
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -517,17 +670,17 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: "6px",
-    fontSize: "13px",
+    fontSize: "12px",
     fontWeight: 500,
     color: "#71717a",
     background: "transparent",
     border: "none",
     borderRadius: "8px",
-    padding: "10px 12px",
+    padding: "10px 8px",
     cursor: "pointer",
     transition: "all 0.15s",
     fontFamily: "inherit",
-    minWidth: "120px",
+    minWidth: "100px",
   },
   tabActive: {
     color: "#fafafa",
@@ -729,6 +882,70 @@ const styles = {
     borderRadius: "8px",
     padding: "12px 16px",
     lineHeight: 1.5,
+  },
+  // JWT Decoder styles
+  jwtSection: {
+    borderLeft: "3px solid",
+    paddingLeft: "16px",
+    marginBottom: "4px",
+  },
+  jwtSectionTitle: {
+    fontSize: "12px",
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    marginBottom: "12px",
+  },
+  claimRow: {
+    display: "flex",
+    gap: "12px",
+    padding: "8px 0",
+    borderBottom: "1px solid rgba(255,255,255,0.04)",
+    alignItems: "flex-start",
+    fontSize: "13px",
+  },
+  claimKey: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: "12px",
+    fontWeight: 600,
+    color: "#a78bfa",
+    minWidth: "120px",
+    flexShrink: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+  },
+  claimKeyHint: {
+    fontSize: "10px",
+    fontWeight: 400,
+    color: "#71717a",
+    fontFamily: "'IBM Plex Sans', sans-serif",
+  },
+  claimValue: {
+    flex: 1,
+    color: "#e4e4e7",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: "12px",
+    lineHeight: 1.5,
+    minWidth: 0,
+  },
+  claimJson: {
+    margin: 0,
+    fontSize: "11px",
+    fontFamily: "'IBM Plex Mono', monospace",
+    color: "#a1a1aa",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-all",
+  },
+  claimTimeBadge: {
+    display: "inline-block",
+    fontSize: "10px",
+    fontWeight: 600,
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    borderRadius: "4px",
+    border: "1px solid",
+    padding: "1px 6px",
+    marginLeft: "8px",
   },
   footer: {
     display: "flex",

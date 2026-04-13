@@ -64,6 +64,9 @@ export default function KSeriesOAuthBuilder() {
   const [redirectResponse, setRedirectResponse] = useState("");
   const [manualCode, setManualCode] = useState("");
 
+  // Refresh token state
+  const [refreshToken, setRefreshToken] = useState("");
+
   const toggleScope = useCallback((scope) => {
     setScopes((prev) =>
       prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]
@@ -114,12 +117,13 @@ export default function KSeriesOAuthBuilder() {
 
   const refreshCurl = useMemo(() => {
     if (!base64Credentials) return "";
+    const rt = refreshToken.trim() || "<your_latest_refresh_token>";
     return `curl --location '${ENVS[env].tokenUrl}' \\
   --header 'Content-Type: application/x-www-form-urlencoded' \\
   --header 'Authorization: Basic ${base64Credentials}' \\
   --data-urlencode 'grant_type=refresh_token' \\
-  --data-urlencode 'refresh_token=<your_latest_refresh_token>'`;
-  }, [base64Credentials, env]);
+  --data-urlencode 'refresh_token=${rt}'`;
+  }, [base64Credentials, env, refreshToken]);
 
   return (
     <div style={styles.root}>
@@ -351,6 +355,16 @@ export default function KSeriesOAuthBuilder() {
                 Each refresh returns a <strong>new</strong> refresh token. Always store and use the latest one.
                 Never hardcode expiry — read <code>expires_in</code> and <code>refresh_expires_in</code> dynamically.
               </p>
+              <div style={{ marginTop: "14px" }}>
+                <label style={styles.label}>Refresh Token</label>
+                <textarea
+                  style={{ ...styles.input, ...styles.textarea }}
+                  placeholder="Paste your latest refresh token here..."
+                  value={refreshToken}
+                  onChange={(e) => setRefreshToken(e.target.value)}
+                  spellCheck={false}
+                />
+              </div>
               {refreshCurl ? (
                 <OutputBlock label="Refresh Token cURL" value={refreshCurl} mono />
               ) : (

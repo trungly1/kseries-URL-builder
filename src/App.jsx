@@ -265,7 +265,7 @@ export default function KSeriesOAuthBuilder() {
           <div>
             <strong>This tool builds URLs and cURL commands only.</strong> It does not create, modify, or provision API clients. Your API client must already be provisioned with the correct scopes and redirect URI before using this tool. To request changes to your API client configuration, contact your Lightspeed technical partner specialist.
             <div style={{ marginTop: "8px", color: "#818cf8" }}>
-              🔒 <strong>Privacy:</strong> All encoding and decoding happens entirely in your browser. No credentials, tokens, or data are sent to any server. <a href="https://github.com/trung-ly-ls/kseries-url-oauth-builder" target="_blank" rel="noopener noreferrer" style={{ color: "#a78bfa", textDecoration: "underline" }}>View source on GitHub</a> to verify.
+              🔒 <strong>Privacy:</strong> All encoding and decoding happens entirely in your browser. No credentials, tokens, or data are sent to any server. <a href="https://github.com/trungly1/kseries-URL-builder" target="_blank" rel="noopener noreferrer" style={{ color: "#a78bfa", textDecoration: "underline" }}>View source on GitHub</a> to verify.
             </div>
           </div>
         </div>

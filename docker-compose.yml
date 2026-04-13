@@ -1,0 +1,7 @@
+services:
+  oauth-builder:
+    build: .
+    container_name: kseries-oauth-builder
+    ports:
+      - "3000:80"
+    restart: unless-stopped
